@@ -1,0 +1,65 @@
+use super::lexer::{LexError, Token};
+use super::parse_tree;
+
+grammar;
+
+pub Term: u64 = {
+    IntegerLit => parse_tree::Literal::UInteger64(<> as u64),
+}
+
+
+extern {
+    type Location = usize;
+    type Error = LexError;
+
+    enum Token {
+        "define" => Token::Define,
+        "func" => Token::Func,
+        "args" => Token::Args,
+        "locals" => Token::Locals,
+        "halt" => Token::Halt,
+        "nop" => Token::Noop,
+        "add" => Token::Add,
+        "sub" => Token::Sub,
+        "mul" => Token::Mul,
+        "div" => Token::Div,
+        "mod" => Token::Mod,
+        "ldconst" => Token::LoadConst,
+        "stlocal" => Token::StoreLocal,
+        "ldlocal" => Token::LoadLocal,
+        "pop" => Token::Pop,
+        "testeq" => Token::TestEqual,
+        "testne" => Token::TestNotEqual,
+        "testgt" => Token::TestGreaterThan,
+        "testlt" => Token::TestLessThan,
+        "jmp" => Token::Jump,
+        "jmpt" => Token::JmpTrue,
+        "jmpf" => Token::JmpFalse,
+        "callfunc" => Token::CallFunction,
+        "callvirt" => Token::CallVirtual,
+        "ret" => Token::Return,
+        "newstruct" => Token::NewStruct,
+        "ldfield" => Token::LoadField,
+        "stfield" => Token::StoreField,
+        "newarray" => Token::NewArray,
+        "void" => Token::VoidType,
+        "addr" => Token::AddressType,
+        "i8" => Token::Integer8Type,
+        "i16" => Token::Integer16Type,
+        "i32" => Token::Integer32Type,
+        "i64" => Token::Integer64Type,
+        "u8" => Token::UInteger8Type,
+        "u16" => Token::UInteger16Type,
+        "u32" => Token::UInteger32Type,
+        "u64" => Token::UInteger64Type,
+        "f32" => Token::Float32Type,
+        "f64" => Token::Float64Type,
+        "str" => Token::StringType,
+        "=" => Token::Equal,
+        ":" => Token::Colon,
+        IntegerLit => Token::Integer(u64),
+        FloatLit => Token::Float(f64),
+        StringLit => Token::String(String),
+        Error => Token::Error,
+    }
+}
