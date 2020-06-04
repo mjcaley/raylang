@@ -4,6 +4,22 @@ pub fn lex_string(source: &str) -> Lexer<Token> {
     return Token::lexer(source);
 }
 
+fn from_hex_string(lex: &mut Lexer<Token>) -> Option<u64> {
+    let slice = lex.slice();
+    match u64::from_str_radix(slice.trim_start_matches("0x"), 16) {
+        Ok(number) => Some(number),
+        Err(_) => None,
+    }
+}
+
+fn from_bin_string(lex: &mut Lexer<Token>) -> Option<u64> {
+    let slice = lex.slice();
+    match u64::from_str_radix(slice.trim_start_matches("0b"), 2) {
+        Ok(number) => Some(number),
+        Err(_) => None,
+    }
+}
+
 #[derive(Logos, Debug, PartialEq)]
 pub enum Token {
     // Keywords
@@ -96,6 +112,9 @@ pub enum Token {
     NewArray,
 
     // Types
+    #[token("void")]
+    VoidType,
+
     #[token("addr")]
     AddressType,
 
@@ -140,19 +159,19 @@ pub enum Token {
     Colon,
 
     // Literals
-    #[regex(r"0x[0-9a-fA-F]+")]
-    #[regex(r"0b[01]+")]
-    #[regex(r"[1-9][0-9]*")]
-    #[token("0")]
-    Integer,
+    #[regex(r"0x[0-9a-fA-F]+", from_hex_string)]
+    #[regex(r"0b[01]+", from_bin_string)]
+    #[regex(r"[1-9][0-9]*", |lex| lex.slice().parse())]
+    #[token("0", |lex| lex.slice().parse())]
+    Integer(u64),
 
-    #[regex(r"0\.[0-9]+")]
-    #[token("0.0")]
-    #[regex(r"[1-9][0-9]*\.[0-9]+")]
-    Float,
+    #[regex(r"0\.[0-9]+", |lex| lex.slice().parse())]
+    #[token("0.0", |lex| lex.slice().parse())]
+    #[regex(r"[1-9][0-9]*\.[0-9]+", |lex| lex.slice().parse())]
+    Float(f64),
 
-    #[regex(r#""[^\n\r"]*""#)]
-    String,
+    #[regex(r#""[^\n\r"]*""#, |lex| lex.slice().trim_matches('"').to_string())]
+    String(String),
 
     #[error]
     #[regex(r"[ \t\r\n\f]+", logos::skip)]
@@ -249,5 +268,301 @@ mod tests {
         let result = lexer.next();
 
         assert_eq!(Some(Token::Pop), result);
+    }
+
+    #[test]
+    fn testeq_instruction() {
+        let mut lexer = lex_string("testeq");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::TestEqual), result);
+    }
+
+    #[test]
+    fn testne_instruction() {
+        let mut lexer = lex_string("testne");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::TestNotEqual), result);
+    }
+
+    #[test]
+    fn testgt_instruction() {
+        let mut lexer = lex_string("testgt");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::TestGreaterThan), result);
+    }
+
+    #[test]
+    fn testlt_instruction() {
+        let mut lexer = lex_string("testlt");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::TestLessThan), result);
+    }
+
+    #[test]
+    fn jmp_instruction() {
+        let mut lexer = lex_string("jmp");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Jump), result);
+    }
+
+    #[test]
+    fn jmpt_instruction() {
+        let mut lexer = lex_string("jmpt");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::JmpTrue), result);
+    }
+
+    #[test]
+    fn jmpf_instruction() {
+        let mut lexer = lex_string("jmpf");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::JmpFalse), result);
+    }
+
+    #[test]
+    fn callfunc_instruction() {
+        let mut lexer = lex_string("callfunc");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::CallFunction), result);
+    }
+
+    #[test]
+    fn callvirt_instruction() {
+        let mut lexer = lex_string("callvirt");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::CallVirtual), result);
+    }
+
+    #[test]
+    fn ret_instruction() {
+        let mut lexer = lex_string("ret");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Return), result);
+    }
+
+    #[test]
+    fn newstruct_instruction() {
+        let mut lexer = lex_string("newstruct");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::NewStruct), result);
+    }
+
+    #[test]
+    fn ldfield_instruction() {
+        let mut lexer = lex_string("ldfield");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::LoadField), result);
+    }
+
+    #[test]
+    fn stfield_instruction() {
+        let mut lexer = lex_string("stfield");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::StoreField), result);
+    }
+
+    #[test]
+    fn newarray_instruction() {
+        let mut lexer = lex_string("newarray");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::NewArray), result);
+    }
+
+    #[test]
+    fn void_type() {
+        let mut lexer = lex_string("void");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::VoidType), result);
+    }
+
+    #[test]
+    fn addr_type() {
+        let mut lexer = lex_string("addr");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::AddressType), result);
+    }
+
+    #[test]
+    fn i8_type() {
+        let mut lexer = lex_string("i8");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer8Type), result);
+    }
+
+    #[test]
+    fn i16_type() {
+        let mut lexer = lex_string("i16");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer16Type), result);
+    }
+
+    #[test]
+    fn i32_type() {
+        let mut lexer = lex_string("i32");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer32Type), result);
+    }
+
+    #[test]
+    fn i64_type() {
+        let mut lexer = lex_string("i64");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer64Type), result);
+    }
+
+    #[test]
+    fn u8_type() {
+        let mut lexer = lex_string("u8");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::UInteger8Type), result);
+    }
+
+    #[test]
+    fn u16_type() {
+        let mut lexer = lex_string("u16");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::UInteger16Type), result);
+    }
+
+    #[test]
+    fn u32_type() {
+        let mut lexer = lex_string("u32");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::UInteger32Type), result);
+    }
+
+    #[test]
+    fn u64_type() {
+        let mut lexer = lex_string("u64");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::UInteger64Type), result);
+    }
+
+    #[test]
+    fn f32_type() {
+        let mut lexer = lex_string("f32");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Float32Type), result);
+    }
+
+    #[test]
+    fn f64_type() {
+        let mut lexer = lex_string("f64");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Float64Type), result);
+    }
+
+    #[test]
+    fn str_type() {
+        let mut lexer = lex_string("str");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::StringType), result);
+    }
+
+    #[test]
+    fn equal_operator() {
+        let mut lexer = lex_string("=");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Equal), result);
+    }
+
+    #[test]
+    fn colon_operator() {
+        let mut lexer = lex_string(":");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Colon), result);
+    }
+
+    #[test]
+    fn zero_integer() {
+        let mut lexer = lex_string("0");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer(0)), result);
+    }
+
+    #[test]
+    fn non_zero_integer() {
+        let mut lexer = lex_string("42");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer(42)), result);
+    }
+
+    #[test]
+    fn hex_integer() {
+        let mut lexer = lex_string("0x2a");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer(42)), result);
+    }
+
+    #[test]
+    fn bin_integer() {
+        let mut lexer = lex_string("0b101010");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer(42)), result);
+    }
+
+    #[test]
+    fn zero_float() {
+        let mut lexer = lex_string("0.0");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Float(0.0)), result);
+    }
+
+    #[test]
+    fn non_zero_float() {
+        let mut lexer = lex_string("4.2");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Float(4.2)), result);
+    }
+
+    #[test]
+    fn string_literal() {
+        let mut lexer = lex_string(r#""String value""#);
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::String("String value".to_string())), result);
+    }
+
+    #[test]
+    fn skip_whitespace() {
+        let mut lexer = lex_string(" \t\r\n\x0c42");
+        let result = lexer.next();
+
+        assert_eq!(Some(Token::Integer(42)), result);
     }
 }
