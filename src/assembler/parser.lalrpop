@@ -3,8 +3,8 @@ use super::parse_tree;
 
 grammar;
 
-pub Term: u64 = {
-    IntegerLit => parse_tree::Literal::UInteger64(<> as u64),
+pub Term: parse_tree::Literal = {
+    IntegerLit => parse_tree::Literal::UInteger64(<>),
 }
 
 
@@ -57,9 +57,9 @@ extern {
         "str" => Token::StringType,
         "=" => Token::Equal,
         ":" => Token::Colon,
-        IntegerLit => Token::Integer(u64),
-        FloatLit => Token::Float(f64),
-        StringLit => Token::String(String),
+        IntegerLit => Token::Integer(<u64>),
+        FloatLit => Token::Float(<f64>),
+        StringLit => Token::String(<String>),
         Error => Token::Error,
     }
 }
