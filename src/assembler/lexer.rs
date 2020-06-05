@@ -20,7 +20,10 @@ fn from_bin_string(lex: &mut Lexer<Token>) -> Option<u64> {
     }
 }
 
-#[derive(Logos, Debug, PartialEq)]
+#[derive(Debug)]
+pub struct LexError(std::ops::Range<usize>, &'static str);
+
+#[derive(Logos, Debug, PartialEq, Clone)]
 pub enum Token {
     // Keywords
     #[token("define")]
